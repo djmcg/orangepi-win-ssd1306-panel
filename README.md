@@ -209,8 +209,8 @@ consecutive write failures the render loop rebuilds the device and re-sends init
 **not** touch it.
 
 Fix: `sudo systemctl restart oled-test`. The shipped watchdog automates this without
-fighting an intentional `oled-recover` (it checks the frame age *and* the process file
-descriptor count every minute):
+fighting an intentional `oled-recover` (every minute it checks the frame age, the file
+descriptor count and the thread count):
 
 ```bash
 sudo install -m 755 deploy/oled-watchdog /usr/local/sbin/oled-watchdog
@@ -288,7 +288,7 @@ and to the bit-bang probe.
 | `deploy/oled-test.service` | systemd unit |
 | `deploy/nginx-oled.conf` | nginx snippet (static `/oled/` + proxy `/api/`) |
 | `deploy/oled-recover` | latched-bus recovery script, install to `/usr/local/sbin` |
-| `deploy/oled-watchdog` + `.service`/`.timer` | restarts the service when the frame goes stale or descriptors leak |
+| `deploy/oled-watchdog` + `.service`/`.timer` | restarts the service when the frame goes stale, descriptors leak or threads explode |
 | `README-oled.md` | the full Polish incident log from the original repair session |
 | `NOTICE.md` | third-party components and their licenses |
 

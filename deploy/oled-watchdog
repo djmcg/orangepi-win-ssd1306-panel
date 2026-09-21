@@ -4,7 +4,8 @@
 # Two failure modes it catches (both keep systemd reporting "active"):
 #   1. frame/status files go stale  -> render loop stuck (I2C block, deadlock)
 #   2. file descriptor count explodes -> "Too many open files", writes stop
-#      while the API keeps answering from memory (incident 2026-09-20)
+#      while the API keeps answering from memory (incident 2026-09-20/21)
+#   3. thread count explodes -> request handling wedges (incident 2026-09-19)
 #
 # Install:  sudo install -m 755 deploy/oled-watchdog /usr/local/sbin/oled-watchdog
 #           sudo cp deploy/oled-watchdog.{service,timer} /etc/systemd/system/
@@ -15,6 +16,7 @@ SERVICE="${SERVICE:-oled-test}"
 FRAME="${FRAME:-/var/www/oled/oled-frame.png}"
 STALE_MIN="${STALE_MIN:-2}"     # frame older than this many minutes = wedged
 FD_MAX="${FD_MAX:-4000}"        # open file descriptors per process = leaking
+THREAD_MAX="${THREAD_MAX:-200}" # threads per process = wedged request handling
 
 systemctl is-active --quiet "$SERVICE" || exit 0
 
@@ -31,7 +33,15 @@ if [ "$fds" -gt "$FD_MAX" ]; then
     exit 0
 fi
 
-# 2) stale frame - the render loop stopped writing but the service is "active"
+# 2) thread explosion - the Flask development server spawns a thread per request
+threads="$(ls /proc/"$pid"/task 2>/dev/null | wc -l)"
+if [ "$threads" -gt "$THREAD_MAX" ]; then
+    logger -t oled-watchdog "thread count $threads > $THREAD_MAX (pid $pid) - restarting $SERVICE"
+    systemctl restart "$SERVICE"
+    exit 0
+fi
+
+# 3) stale frame - the render loop stopped writing but the service is "active"
 if [ -f "$FRAME" ] && ! find "$FRAME" -mmin -"$STALE_MIN" 2>/dev/null | grep -q .; then
     logger -t oled-watchdog "frame stale > ${STALE_MIN}min (pid $pid) - restarting $SERVICE"
     systemctl restart "$SERVICE"
