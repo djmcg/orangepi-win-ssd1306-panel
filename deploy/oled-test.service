@@ -1,0 +1,20 @@
+[Unit]
+Description=SSD1306 OLED status display (Orange Pi Win)
+Documentation=file:/var/www/oled/README.md
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=simple
+# Adjust WorkingDirectory/ExecStart if you cloned the project somewhere else:
+WorkingDirectory=/var/www/oled
+ExecStart=/usr/bin/python3 /var/www/oled/oled_test.py --interval 1 --status-json /var/www/oled/oled-status.json --frame-png /var/www/oled/oled-frame.png
+Restart=always
+# 3 s so a transient I2C error recovers quickly; the app also re-inits the panel itself.
+RestartSec=3
+Nice=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

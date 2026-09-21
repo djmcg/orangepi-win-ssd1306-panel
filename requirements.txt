@@ -1,0 +1,14 @@
+# Zaleznosci panelu OLED dla Orange Pi Win (SSD1306 128x32, /dev/i2c-1 @ 0x3c).
+#
+# UWAGA: na maszynie referencyjnej czesc pakietow pochodzi z APT, nie z pip:
+#   python3-flask 3.1.1 (Debian 13 trixie) + Werkzeug 3.1.3
+# Wersje ponizej sa nieprzypiete celowo - potwierdz je u siebie przed publikacja:
+#   python3 -m pip freeze | grep -iE 'luma|pillow|smbus|flask'
+#
+# Warstwa sprzetowa (userspace I2C -> SSD1306, bez sterownika jadra):
+luma.oled
+Pillow
+smbus2
+
+# Backend API (/api/status, /api/command, ...) i serwowanie panelu /oled/:
+Flask

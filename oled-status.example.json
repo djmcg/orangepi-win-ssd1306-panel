@@ -1,0 +1,27 @@
+{
+  "board": "OrangePi Win",
+  "bus": 1,
+  "address": "0x3c",
+  "panel": "128x32",
+  "interval": 1.0,
+  "service": "oled-test.service",
+  "rows": [
+    "OrangePi Win",
+    "YYYY-MM-DD HH:MM:SS",
+    "CPU 00.0 C"
+  ],
+  "fontSizes": [
+    8,
+    8,
+    8
+  ],
+  "cpuTemp": 0.0,
+  "date": "YYYY-MM-DD",
+  "time": "HH:MM:SS",
+  "datetime": "YYYY-MM-DD HH:MM:SS",
+  "uptime": "00:00",
+  "mode": "SYSTEM_DEFAULT",
+  "renderMode": null,
+  "updated": "YYYY-MM-DDTHH:MM:SS",
+  "pid": 0
+}

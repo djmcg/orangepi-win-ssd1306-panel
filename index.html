@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OLED — Orange Pi Win</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .wrap { width: 100%; max-width: 900px; }
+        .back {
+            display: inline-block;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+        .back:hover { color: #38bdf8; }
+        .header { text-align: center; margin-bottom: 28px; }
+        h1 { font-size: 2rem; margin-bottom: 8px; }
+        h2 {
+            font-size: 1rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin: 28px 0 12px;
+        }
+        .sub { color: #94a3b8; font-size: 0.95rem; }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .panel-card { padding: 24px; }
+        .panel-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .panel-title { font-weight: 600; color: #f1f5f9; }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #64748b;
+            box-shadow: 0 0 8px rgba(100, 116, 139, 0.6);
+        }
+        .dot.online { background: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.8); }
+        .dot.offline { background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.8); }
+        /* Obudowa wyświetlacza */
+        .oled-frame {
+            background: #0b1120;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: auto;
+        }
+        .oled-screen {
+            background: #000;
+            border-radius: 4px;
+            padding: 6px;
+            box-shadow: 0 0 24px rgba(56, 189, 248, 0.18), inset 0 0 12px rgba(0,0,0,0.9);
+            line-height: 0;
+        }
+        #frame {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background: #000;
+            width: 512px;
+            height: 128px;
+        }
+        .frame-note {
+            margin-top: 12px;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-align: center;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+        .stat {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .stat .label {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+        .stat .value { font-size: 1.15rem; font-weight: 600; color: #38bdf8; }
+        .stat .value.small { font-size: 0.95rem; }
+        table.info { width: 100%; border-collapse: collapse; }
+        table.info td {
+            padding: 8px 0;
+            border-bottom: 1px solid #334155;
+            font-size: 0.9rem;
+        }
+        table.info tr:last-child td { border-bottom: none; }
+        table.info td:first-child { color: #94a3b8; width: 40%; }
+        table.info td:last-child { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        code, pre {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.82rem;
+        }
+        pre {
+            background: #0b1120;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 14px;
+            color: #a5f3fc;
+            overflow-x: auto;
+        }
+        ul.files { list-style: none; }
+        ul.files li {
+            padding: 8px 0;
+            border-bottom: 1px solid #334155;
+            font-size: 0.88rem;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        ul.files li:last-child { border-bottom: none; }
+        ul.files .name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #f1f5f9; }
+        ul.files .desc { color: #94a3b8; font-size: 0.82rem; }
+        
+        /* Interactive controls & agent console */
+        .console-group {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        input[type="text"] {
+            flex: 1;
+            min-width: 240px;
+            background: #0b1120;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #f8fafc;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus { border-color: #38bdf8; }
+        .btn {
+            background: #0ea5e9;
+            color: #f8fafc;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn:hover { background: #38bdf8; color: #0f172a; }
+        .btn:active { transform: scale(0.98); }
+        .btn-secondary {
+            background: #334155;
+            color: #f8fafc;
+        }
+        .btn-secondary:hover { background: #475569; color: #f8fafc; }
+        
+        .lines-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .lines-label { font-size: 0.85rem; color: #94a3b8; margin-right: 4px; }
+        .pill {
+            background: #0b1120;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pill.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: #38bdf8;
+            color: #38bdf8;
+            font-weight: 600;
+        }
+        .actions-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        
+        /* History list */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .history-item {
+            background: #0b1120;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .history-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.85rem;
+        }
+        .history-meta {
+            color: #94a3b8;
+            font-size: 0.75rem;
+            display: flex;
+            gap: 8px;
+        }
+        .history-preview {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            color: #38bdf8;
+            font-size: 0.85rem;
+        }
+
+        footer { margin: 32px 0 8px; color: #475569; font-size: 0.78rem; text-align: center; }
+        .warn { color: #f59e0b; }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <a class="back" href="/">← Powrót do panelu głównego</a>
+
+        <div class="header">
+            <h1>🖥️ OLED</h1>
+            <p class="sub">Wyświetlacz SSD1306 na Orange Pi Win — podgląd na żywo i konsola Agenta</p>
+        </div>
+
+        <div class="card panel-card">
+            <div class="panel-top">
+                <div class="panel-title">Ekran (rzeczywista klatka)</div>
+                <div class="status">
+                    <span class="dot" id="dot"></span>
+                    <span id="state">sprawdzanie…</span>
+                </div>
+            </div>
+            <div class="oled-frame">
+                <div class="oled-screen">
+                    <img id="frame" src="/oled/oled-frame.png" alt="Podgląd wyświetlacza OLED" width="512" height="128">
+                </div>
+            </div>
+            <div class="frame-note">
+                Obraz odświeżany co 1–2 s — podgląd klatki wysłanej na fizyczny wyświetlacz
+            </div>
+        </div>
+
+        <h2>Konsola Agenta i Sterowanie</h2>
+        <div class="card">
+            <div class="console-group">
+                <div class="input-row">
+                    <input type="text" id="commandInput" placeholder="Wpisz treść lub komendę (np. domyslny, temp, zegar, lub dowolny tekst)..." autocomplete="off" maxlength="120">
+                    <button class="btn" id="sendBtn">Wyślij na OLED</button>
+                </div>
+                <div class="lines-selector">
+                    <span class="lines-label">Liczba wierszy:</span>
+                    <button class="pill active" data-lines="auto">Auto</button>
+                    <button class="pill" data-lines="1">1 Wiersz</button>
+                    <button class="pill" data-lines="2">2 Wiersze</button>
+                    <button class="pill" data-lines="3">3 Wiersze</button>
+                    <button class="pill" data-lines="max">MAX</button>
+                </div>
+                <div class="actions-row">
+                    <button class="btn btn-secondary" id="resetBtn">⟲ Przywróć ekran domyślny (OrangePi Win)</button>
+                    <button class="btn btn-secondary" id="tempBtn">🌡️ Stan CPU</button>
+                    <button class="btn btn-secondary" id="clockBtn">🕒 Zegar</button>
+                </div>
+                <div class="actions-row">
+                    <button class="btn btn-secondary" id="uploadBtn">🖼 Wgraj obraz</button>
+                    <input type="file" id="imageInput" accept="image/png,image/jpeg,image/webp,image/bmp" style="display:none">
+                    <span id="uploadStatus" style="color:#94a3b8;font-size:0.85rem;align-self:center;"></span>
+                </div>
+                <div class="actions-row">
+                    <button class="btn btn-secondary" id="demoBtn">🧪 Tryb Demo</button>
+                    <button class="btn btn-secondary" id="fillMaxBtn" style="border: 1px solid #38bdf8; color: #38bdf8;">⬛ Maksymalne wypełnienie (128x32)</button>
+                </div>
+            </div>
+        </div>
+
+        <h2>Stan wyświetlacza</h2>
+        <div class="grid">
+            <div class="stat">
+                <div class="label">Magistrala</div>
+                <div class="value small" id="bus">--</div>
+            </div>
+            <div class="stat">
+                <div class="label">Temperatura CPU</div>
+                <div class="value" id="temp">--</div>
+            </div>
+            <div class="stat">
+                <div class="label">Czas pracy</div>
+                <div class="value small" id="uptime">--</div>
+            </div>
+            <div class="stat">
+                <div class="label">Tryb pracy</div>
+                <div class="value small" id="mode">--</div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 14px;">
+            <table class="info">
+                <tr><td>Płytka</td><td id="board">--</td></tr>
+                <tr><td>Panel</td><td id="panel">--</td></tr>
+                <tr><td>Adres I²C</td><td id="address">--</td></tr>
+                <tr><td>Data i czas na ekranie</td><td id="datetime">--</td></tr>
+                <tr><td>Usługa</td><td id="service">--</td></tr>
+                <tr><td>Ostatnia aktualizacja</td><td id="updated">--</td></tr>
+                <tr><td>PID procesu</td><td id="pid">--</td></tr>
+            </table>
+        </div>
+
+        <h2>Co pokazuje ekran</h2>
+        <div class="card">
+            <table class="info" id="rows">
+                <tr><td colspan="2">brak danych</td></tr>
+            </table>
+        </div>
+
+        <h2>Historia ekranów</h2>
+        <div class="card">
+            <div class="history-list" id="historyList">
+                <div style="color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 12px;">Brak wpisów w historii</div>
+            </div>
+        </div>
+
+        <h2>Sterowanie systemd</h2>
+        <div class="card">
+            <pre>systemctl status oled-test          # stan wyświetlacza
+journalctl -u oled-test -f          # podgląd na żywo
+systemctl restart oled-test         # restart
+systemctl disable --now oled-test   # wyłącz autostart</pre>
+        </div>
+
+        <h2>Pliki projektu</h2>
+        <div class="card">
+            <ul class="files">
+                <li><span class="name">oled_test.py</span><span class="desc">usługa Flask API + sterownik OLED SSD1306</span></li>
+                <li><span class="name">oled-status.json</span><span class="desc">stan na żywo</span></li>
+                <li><span class="name">oled-frame.png</span><span class="desc">zrzut klatki ekranu</span></li>
+                <li><span class="name">index.html + app.js</span><span class="desc">panel sterowania i konsola</span></li>
+            </ul>
+        </div>
+
+        <footer>Orange Pi Win · SSD1306 0.91″ · zasilanie z pinu 4 (5 V)</footer>
+
+        <script src="/oled/app.js"></script>
+    </div>
+</body>
+</html>

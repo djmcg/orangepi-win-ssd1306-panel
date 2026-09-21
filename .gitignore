@@ -1,0 +1,31 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# --- runtime artifacts of oled-test.service ---
+# Generated while the service runs (PIDs, timestamps, frame snapshots);
+# they do not belong in the repo. Ship oled-status.example.json instead.
+oled-status.json
+oled-frame.png
+oled-history.json
+*.png.tmp
+
+# --- quarantined: raw I2C block writes can latch the I2C bus ---
+# Kept on the device, intentionally NOT published (see README).
+oled_raw_i2c.py
+
+# --- work copies / incident backups ---
+*.bak
+*.bak-*
+*.orig
+*.rej
+*.log
+
+# --- local notes / secrets ---
+.env
+*.local
+NOTES-*.md
+

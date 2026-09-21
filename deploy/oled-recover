@@ -1,0 +1,46 @@
+#!/bin/bash
+# oled-recover - rescue script for a latched I2C1 bus on the Orange Pi Win.
+#
+# Symptom it fixes: dmesg flooding with "mv64xxx: I2C bus locked" (the panel or
+# a slave keeps SDA low). i2cdetect hangs in state D and the web preview keeps
+# rendering frames that never reach the glass.
+#
+# What it does: stops the service, kills stuck i2cdetect processes, unbinds and
+# re-binds the mv64xxx_i2c controller (no reboot needed), verifies 0x3c and
+# starts the service again.
+#
+# Install:  sudo install -m 755 deploy/oled-recover /usr/local/sbin/oled-recover
+set -u
+
+DRV=/sys/bus/platform/drivers/mv64xxx_i2c
+DEV=1c2b000.i2c
+BUS=1
+SERVICE=oled-test
+
+echo "[1/5] stopping the service..."
+systemctl stop "$SERVICE"
+sleep 1
+
+echo "[2/5] killing stuck i2cdetect processes..."
+pkill -9 i2cdetect 2>/dev/null || true
+sleep 1
+
+echo "[3/5] resetting the I2C controller ($DEV)..."
+echo "$DEV" > "$DRV/unbind"; sleep 2
+echo "$DEV" > "$DRV/bind";   sleep 3
+
+echo "[4/5] testing the bus..."
+if timeout 6 i2cdetect -y "$BUS" | grep -q ' 3c '; then
+    echo "     OK - panel answers on 0x3c"
+else
+    echo "     FAILED - panel does not answer."
+    echo "     -> pull VCC (pin 4) for 5 s, reseat SDA (pin 3) / SCL (pin 5)"
+    echo "     -> then run:  oled-recover"
+    exit 2
+fi
+
+echo "[5/5] starting the service..."
+systemctl start "$SERVICE"
+sleep 4
+echo -n "service:  "; systemctl is-active "$SERVICE"
+echo -n "lockups:  "; dmesg | grep -c 'bus locked'
