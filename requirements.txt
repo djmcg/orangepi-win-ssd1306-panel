@@ -12,3 +12,6 @@ smbus2
 
 # Backend API (/api/status, /api/command, ...) i serwowanie panelu /oled/:
 Flask
+# Produkcyjny serwer WSGI (apt: python3-waitress). Bez niego kod wraca do serwera
+# developerskiego Flask/Werkzeug, ktory przy dlugim pollingu gubi watki i deskryptory.
+waitress

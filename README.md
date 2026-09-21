@@ -89,7 +89,7 @@ Rollback: `cp /boot/armbianEnv.txt.bak /boot/armbianEnv.txt`
 ## Install
 
 ```bash
-sudo apt install i2c-tools python3-flask python3-pil python3-smbus2 fonts-dejavu-core
+sudo apt install i2c-tools python3-flask python3-pil python3-smbus2 python3-waitress fonts-dejavu-core
 python3 -m pip install luma.oled --break-system-packages   # or use a virtualenv
 ```
 
@@ -242,6 +242,11 @@ only print the error, so the failure is silent unless you check file mtimes.
 Restarting the service clears it; `oled-watchdog` (item 3) catches it automatically,
 because a stale frame is the only visible symptom.
 
+Since 2026-09-21 the API is served by waitress with a fixed worker pool (`--threads`,
+default 8) instead of the Flask development server, and the auto re-init path closes the
+previous luma device handle (`release_device()`), removing the two known sources of
+descriptor growth.
+
 Diagnose:
 
 ```bash
@@ -307,7 +312,9 @@ for latching the bus; `luma.oled` sends a correct init sequence instead.
 - The service can leak file descriptors over days and keep reporting `active` while
   status/PNG writes fail (item 4) - install `oled-watchdog` (item 3).
 - Default geometry is 128x32; 0.96" modules need `--height 64`.
-- Flask/Werkzeug development server with `threaded=True` - fine for one board, not for the internet.
+- The API runs on waitress (fixed worker pool, `--threads`, default 8). Without waitress
+  the code falls back to the Flask development server, which churns threads and file
+  descriptors under long-running polling (see item 4).
 - No authentication in the web panel: keep it on your LAN or add auth yourself.
 
 ## Credits and license

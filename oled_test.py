@@ -17,6 +17,11 @@ from luma.core.interface.serial import i2c
 from luma.oled.device import ssd1306, sh1106
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
+try:  # production WSGI server: bounded worker pool, no dev-server thread churn
+    from waitress import serve as waitress_serve
+except ImportError:  # fall back to the Flask development server
+    waitress_serve = None
+
 MODEL_PATH = "/proc/device-tree/model"
 TEMP_PATH = "/sys/class/thermal/thermal_zone0/temp"
 UPTIME_PATH = "/proc/uptime"
@@ -366,6 +371,10 @@ def oled_loop(device, args):
     frame_counter = 0
     consecutive_errors = 0
     last_reinit_attempt = 0.0
+    # Initialised before the loop so that an exception raised early in an
+    # iteration cannot cause a NameError below and silently kill this thread.
+    mode = "SYSTEM_DEFAULT"
+    render_mode = None
     while True:
         try:
             now = datetime.now()
@@ -444,6 +453,7 @@ def oled_loop(device, args):
                     last_reinit_attempt = now_ts
                     try:
                         new_device = build_device(args)
+                        release_device(device)
                         state.device = new_device
                         device = new_device
                         consecutive_errors = 0
@@ -471,6 +481,7 @@ def oled_loop(device, args):
                     last_reinit_attempt = now_ts
                     try:
                         new_device = build_device(args)
+                        release_device(device)
                         state.device = new_device
                         device = new_device
                         consecutive_errors = 0
@@ -754,6 +765,24 @@ def detect_bus(address):
         return bus
     return None
 
+def release_device(device):
+    """Close the I2C handle held by the previous luma device.
+
+    Without this, every auto re-init leaves the old bus handle open and the
+    service slowly runs out of file descriptors while systemd still reports it
+    as active (status/PNG writes then fail silently).
+    """
+    if device is None or getattr(device, "is_dummy", False):
+        return
+    for target in (getattr(device, "_serial", None), device):
+        cleanup = getattr(target, "cleanup", None)
+        if callable(cleanup):
+            try:
+                cleanup()
+            except Exception as err:
+                print("device cleanup warning: %s" % err, file=sys.stderr)
+            return
+
 def build_device(args):
     """Create the OLED device object. The constructor sends the full init
     sequence (display on, charge pump, mux/mapping, contrast) to the panel."""
@@ -782,6 +811,8 @@ def main(argv=None):
                         help="refresh interval in seconds (default: 1)")
     parser.add_argument("--port", type=int, default=5003,
                         help="Flask API port (default: 5003)")
+    parser.add_argument("--threads", type=int, default=8,
+                        help="WSGI worker threads when waitress is available (default: 8)")
     parser.add_argument("--status-json", default=STATUS_JSON,
                         help="live status for the web page")
     parser.add_argument("--frame-png", default=FRAME_PNG,
@@ -819,7 +850,13 @@ def main(argv=None):
     t.start()
 
     print("Starting Flask API server on port %d" % args.port, flush=True)
-    app.run(host="0.0.0.0", port=args.port, threaded=True, debug=False, use_reloader=False)
+    if waitress_serve is not None:
+        print("Serving with waitress (%d worker threads)" % args.threads, flush=True)
+        waitress_serve(app, host="0.0.0.0", port=args.port, threads=args.threads)
+    else:
+        print("waitress not installed - falling back to the Flask development server",
+              flush=True)
+        app.run(host="0.0.0.0", port=args.port, threaded=True, debug=False, use_reloader=False)
 
     return 0
 

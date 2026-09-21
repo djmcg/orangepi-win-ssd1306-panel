@@ -11,6 +11,7 @@ komponentach Armbian/Linux:
 | Magistrala | `smbus2` | © Karl-Johan Alm — licencja **MIT** |
 | Grafika / fonty | `Pillow` | © Jeffrey A. Clark i kontrybutorzy — licencja **MIT-CMU / HPND** |
 | Backend HTTP | `Flask` | © Pallets — licencja **BSD-3-Clause** |
+| Serwer WSGI | `waitress` | © Zope Foundation i kontrybutorzy — licencja **ZPL-2.1** |
 
 Kod w tym repozytorium jedynie **korzysta** z powyższych bibliotek (importy),
 więc może być rozpowszechniany na własnej licencji.
