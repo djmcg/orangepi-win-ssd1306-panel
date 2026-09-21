@@ -208,14 +208,49 @@ consecutive write failures the render loop rebuilds the device and re-sends init
 (`ps -o nlwp -C python3`) climbs into the hundreds. The bus is healthy here - do
 **not** touch it.
 
-Fix: `sudo systemctl restart oled-test`. A cron watchdog with an `is-active` guard
-automates this without fighting an intentional `oled-recover`:
+Fix: `sudo systemctl restart oled-test`. The shipped watchdog automates this without
+fighting an intentional `oled-recover` (it checks the frame age *and* the process file
+descriptor count every minute):
+
+```bash
+sudo install -m 755 deploy/oled-watchdog /usr/local/sbin/oled-watchdog
+sudo cp deploy/oled-watchdog.service deploy/oled-watchdog.timer /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now oled-watchdog.timer
+```
+
+Cron equivalent, kept for people who prefer cron over timers:
 
 ```cron
 * * * * * systemctl is-active --quiet oled-test && ! find /var/www/oled/oled-frame.png -mmin -1 | grep -q . && systemctl restart oled-test
 ```
 
-### 4. The web preview can lie
+A guard for the same job in the old cron entry was left commented out on this machine,
+which is exactly why the wedge described in item 4 went unnoticed for a day.
+
+### 4. Writes stopped while the API still answers: file descriptor exhaustion
+
+Observed once in production (2026-09-21): the service stayed `active` and kept
+answering `/api/status` from memory, but `oled-status.json` and `oled-frame.png`
+froze, and the process had burned 26 h of CPU time. The journal showed:
+
+```
+cannot write /var/www/oled/oled-status.json: [Errno 24] Too many open files: '...tmp'
+```
+
+The render loop never crashes on this: `write_text_atomic` / `write_image_atomic`
+only print the error, so the failure is silent unless you check file mtimes.
+Restarting the service clears it; `oled-watchdog` (item 3) catches it automatically,
+because a stale frame is the only visible symptom.
+
+Diagnose:
+
+```bash
+P=$(systemctl show -p ExecMainPID --value oled-test)
+ls /proc/$P/fd | wc -l                                        # thousands = leaking
+ls -l /proc/$P/fd | sed 's/.*-> //' | sort | uniq -c | sort -rn | head
+```
+
+### 5. The web preview can lie
 
 `oled-frame.png` is generated from the *render*, not read back from the panel. With a
 latched bus or a de-initialised panel the page still shows a fresh frame and a green
@@ -226,13 +261,13 @@ There is no true readback over I2C - the SSD1306 GDDRAM is write-only from the h
 side - so a software mirror is the only affordable preview, and it must be labelled as
 such.
 
-### 5. Only one process may own the panel
+### 6. Only one process may own the panel
 
 Anything that talks to the OLED must run while `oled-test` is stopped, otherwise you get
 `Input/output error` / `Remote I/O error`. That applies to the bundled luma test scripts
 and to the bit-bang probe.
 
-### 6. Quick triage
+### 7. Quick triage
 
 | Symptom | Check | Fix |
 |---|---|---|
@@ -253,6 +288,7 @@ and to the bit-bang probe.
 | `deploy/oled-test.service` | systemd unit |
 | `deploy/nginx-oled.conf` | nginx snippet (static `/oled/` + proxy `/api/`) |
 | `deploy/oled-recover` | latched-bus recovery script, install to `/usr/local/sbin` |
+| `deploy/oled-watchdog` + `.service`/`.timer` | restarts the service when the frame goes stale or descriptors leak |
 | `README-oled.md` | the full Polish incident log from the original repair session |
 | `NOTICE.md` | third-party components and their licenses |
 
@@ -267,7 +303,9 @@ for latching the bus; `luma.oled` sends a correct init sequence instead.
 
 - One process per panel - there is no cross-process locking.
 - Image mode: 5 MB upload limit, Floyd-Steinberg dithering, target geometry from the flags.
-- `/api/status` reports the rendered state, not a readback from the glass (item 4).
+- `/api/status` reports the rendered state, not a readback from the glass (item 5).
+- The service can leak file descriptors over days and keep reporting `active` while
+  status/PNG writes fail (item 4) - install `oled-watchdog` (item 3).
 - Default geometry is 128x32; 0.96" modules need `--height 64`.
 - Flask/Werkzeug development server with `threaded=True` - fine for one board, not for the internet.
 - No authentication in the web panel: keep it on your LAN or add auth yourself.

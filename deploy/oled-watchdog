@@ -1,0 +1,41 @@
+#!/bin/bash
+# oled-watchdog - restart oled-test when it is silently wedged.
+#
+# Two failure modes it catches (both keep systemd reporting "active"):
+#   1. frame/status files go stale  -> render loop stuck (I2C block, deadlock)
+#   2. file descriptor count explodes -> "Too many open files", writes stop
+#      while the API keeps answering from memory (incident 2026-09-20)
+#
+# Install:  sudo install -m 755 deploy/oled-watchdog /usr/local/sbin/oled-watchdog
+#           sudo cp deploy/oled-watchdog.{service,timer} /etc/systemd/system/
+#           sudo systemctl daemon-reload && sudo systemctl enable --now oled-watchdog.timer
+set -u
+
+SERVICE="${SERVICE:-oled-test}"
+FRAME="${FRAME:-/var/www/oled/oled-frame.png}"
+STALE_MIN="${STALE_MIN:-2}"     # frame older than this many minutes = wedged
+FD_MAX="${FD_MAX:-4000}"        # open file descriptors per process = leaking
+
+systemctl is-active --quiet "$SERVICE" || exit 0
+
+pid="$(systemctl show -p ExecMainPID --value "$SERVICE" 2>/dev/null || true)"
+case "${pid:-}" in
+    ""|0|*[!0-9]*) exit 0 ;;   # no main process yet
+esac
+
+# 1) descriptor exhaustion - check first, it needs no write access to the frame
+fds="$(ls /proc/"$pid"/fd 2>/dev/null | wc -l)"
+if [ "$fds" -gt "$FD_MAX" ]; then
+    logger -t oled-watchdog "fd count $fds > $FD_MAX (pid $pid) - restarting $SERVICE"
+    systemctl restart "$SERVICE"
+    exit 0
+fi
+
+# 2) stale frame - the render loop stopped writing but the service is "active"
+if [ -f "$FRAME" ] && ! find "$FRAME" -mmin -"$STALE_MIN" 2>/dev/null | grep -q .; then
+    logger -t oled-watchdog "frame stale > ${STALE_MIN}min (pid $pid) - restarting $SERVICE"
+    systemctl restart "$SERVICE"
+    exit 0
+fi
+
+exit 0

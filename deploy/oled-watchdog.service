@@ -1,0 +1,8 @@
+[Unit]
+Description=Watchdog for oled-test (stale frame / file descriptor exhaustion)
+Documentation=file:/var/www/oled/README.md
+After=oled-test.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/oled-watchdog

@@ -1,0 +1,12 @@
+[Unit]
+Description=Run the oled-test watchdog every minute
+Documentation=file:/var/www/oled/README.md
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Unit=oled-watchdog.service
+
+[Install]
+WantedBy=timers.target
