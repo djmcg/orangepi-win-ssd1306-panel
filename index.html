@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -66,7 +66,7 @@
         }
         .dot.online { background: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.8); }
         .dot.offline { background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.8); }
-        /* Obudowa wyświetlacza */
+        /* Display bezel */
         .oled-frame {
             background: #0b1120;
             border: 1px solid #334155;
@@ -270,128 +270,128 @@
 
 <body>
     <div class="wrap">
-        <a class="back" href="/">← Powrót do panelu głównego</a>
+        <a class="back" href="/">← Back to main dashboard</a>
 
         <div class="header">
             <h1>🖥️ OLED</h1>
-            <p class="sub">Wyświetlacz SSD1306 na Orange Pi Win — podgląd na żywo i konsola Agenta</p>
+            <p class="sub">SSD1306 display on Orange Pi Win — live preview and Agent console</p>
         </div>
 
         <div class="card panel-card">
             <div class="panel-top">
-                <div class="panel-title">Ekran (rzeczywista klatka)</div>
+                <div class="panel-title">Screen (actual frame)</div>
                 <div class="status">
                     <span class="dot" id="dot"></span>
-                    <span id="state">sprawdzanie…</span>
+                    <span id="state">checking…</span>
                 </div>
             </div>
             <div class="oled-frame">
                 <div class="oled-screen">
-                    <img id="frame" src="/oled/oled-frame.png" alt="Podgląd wyświetlacza OLED" width="512" height="128">
+                    <img id="frame" src="/oled/oled-frame.png" alt="OLED display preview" width="512" height="128">
                 </div>
             </div>
             <div class="frame-note">
-                Obraz odświeżany co 1–2 s — podgląd klatki wysłanej na fizyczny wyświetlacz
+                Refreshed every 1–2 s — preview of the frame sent to the physical display
             </div>
         </div>
 
-        <h2>Konsola Agenta i Sterowanie</h2>
+        <h2>Agent Console &amp; Controls</h2>
         <div class="card">
             <div class="console-group">
                 <div class="input-row">
-                    <input type="text" id="commandInput" placeholder="Wpisz treść lub komendę (np. domyslny, temp, zegar, lub dowolny tekst)..." autocomplete="off" maxlength="120">
-                    <button class="btn" id="sendBtn">Wyślij na OLED</button>
+                    <input type="text" id="commandInput" placeholder="Type text or a command (e.g. default, temp, clock, or any text)..." autocomplete="off" maxlength="120">
+                    <button class="btn" id="sendBtn">Send to OLED</button>
                 </div>
                 <div class="lines-selector">
-                    <span class="lines-label">Liczba wierszy:</span>
+                    <span class="lines-label">Lines:</span>
                     <button class="pill active" data-lines="auto">Auto</button>
-                    <button class="pill" data-lines="1">1 Wiersz</button>
-                    <button class="pill" data-lines="2">2 Wiersze</button>
-                    <button class="pill" data-lines="3">3 Wiersze</button>
+                    <button class="pill" data-lines="1">1 Line</button>
+                    <button class="pill" data-lines="2">2 Lines</button>
+                    <button class="pill" data-lines="3">3 Lines</button>
                     <button class="pill" data-lines="max">MAX</button>
                 </div>
                 <div class="actions-row">
-                    <button class="btn btn-secondary" id="resetBtn">⟲ Przywróć ekran domyślny (OrangePi Win)</button>
-                    <button class="btn btn-secondary" id="tempBtn">🌡️ Stan CPU</button>
-                    <button class="btn btn-secondary" id="clockBtn">🕒 Zegar</button>
+                    <button class="btn btn-secondary" id="resetBtn">⟲ Restore default screen (OrangePi Win)</button>
+                    <button class="btn btn-secondary" id="tempBtn">🌡️ CPU status</button>
+                    <button class="btn btn-secondary" id="clockBtn">🕒 Clock</button>
                 </div>
                 <div class="actions-row">
-                    <button class="btn btn-secondary" id="uploadBtn">🖼 Wgraj obraz</button>
+                    <button class="btn btn-secondary" id="uploadBtn">🖼 Upload image</button>
                     <input type="file" id="imageInput" accept="image/png,image/jpeg,image/webp,image/bmp" style="display:none">
                     <span id="uploadStatus" style="color:#94a3b8;font-size:0.85rem;align-self:center;"></span>
                 </div>
                 <div class="actions-row">
-                    <button class="btn btn-secondary" id="demoBtn">🧪 Tryb Demo</button>
-                    <button class="btn btn-secondary" id="fillMaxBtn" style="border: 1px solid #38bdf8; color: #38bdf8;">⬛ Maksymalne wypełnienie (128x32)</button>
+                    <button class="btn btn-secondary" id="demoBtn">🧪 Demo mode</button>
+                    <button class="btn btn-secondary" id="fillMaxBtn" style="border: 1px solid #38bdf8; color: #38bdf8;">⬛ Max fill (128x32)</button>
                 </div>
             </div>
         </div>
 
-        <h2>Stan wyświetlacza</h2>
+        <h2>Display status</h2>
         <div class="grid">
             <div class="stat">
-                <div class="label">Magistrala</div>
+                <div class="label">Bus</div>
                 <div class="value small" id="bus">--</div>
             </div>
             <div class="stat">
-                <div class="label">Temperatura CPU</div>
+                <div class="label">CPU temperature</div>
                 <div class="value" id="temp">--</div>
             </div>
             <div class="stat">
-                <div class="label">Czas pracy</div>
+                <div class="label">Uptime</div>
                 <div class="value small" id="uptime">--</div>
             </div>
             <div class="stat">
-                <div class="label">Tryb pracy</div>
+                <div class="label">Mode</div>
                 <div class="value small" id="mode">--</div>
             </div>
         </div>
 
         <div class="card" style="margin-top: 14px;">
             <table class="info">
-                <tr><td>Płytka</td><td id="board">--</td></tr>
+                <tr><td>Board</td><td id="board">--</td></tr>
                 <tr><td>Panel</td><td id="panel">--</td></tr>
-                <tr><td>Adres I²C</td><td id="address">--</td></tr>
-                <tr><td>Data i czas na ekranie</td><td id="datetime">--</td></tr>
-                <tr><td>Usługa</td><td id="service">--</td></tr>
-                <tr><td>Ostatnia aktualizacja</td><td id="updated">--</td></tr>
-                <tr><td>PID procesu</td><td id="pid">--</td></tr>
+                <tr><td>I²C address</td><td id="address">--</td></tr>
+                <tr><td>On-screen date &amp; time</td><td id="datetime">--</td></tr>
+                <tr><td>Service</td><td id="service">--</td></tr>
+                <tr><td>Last update</td><td id="updated">--</td></tr>
+                <tr><td>Process PID</td><td id="pid">--</td></tr>
             </table>
         </div>
 
-        <h2>Co pokazuje ekran</h2>
+        <h2>What's on screen</h2>
         <div class="card">
             <table class="info" id="rows">
-                <tr><td colspan="2">brak danych</td></tr>
+                <tr><td colspan="2">no data</td></tr>
             </table>
         </div>
 
-        <h2>Historia ekranów</h2>
+        <h2>Screen history</h2>
         <div class="card">
             <div class="history-list" id="historyList">
-                <div style="color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 12px;">Brak wpisów w historii</div>
+                <div style="color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 12px;">No history entries yet</div>
             </div>
         </div>
 
-        <h2>Sterowanie systemd</h2>
+        <h2>systemd control</h2>
         <div class="card">
-            <pre>systemctl status oled-test          # stan wyświetlacza
-journalctl -u oled-test -f          # podgląd na żywo
+            <pre>systemctl status oled-test          # display status
+journalctl -u oled-test -f          # live log output
 systemctl restart oled-test         # restart
-systemctl disable --now oled-test   # wyłącz autostart</pre>
+systemctl disable --now oled-test   # disable autostart</pre>
         </div>
 
-        <h2>Pliki projektu</h2>
+        <h2>Project files</h2>
         <div class="card">
             <ul class="files">
-                <li><span class="name">oled_test.py</span><span class="desc">usługa Flask API + sterownik OLED SSD1306</span></li>
-                <li><span class="name">oled-status.json</span><span class="desc">stan na żywo</span></li>
-                <li><span class="name">oled-frame.png</span><span class="desc">zrzut klatki ekranu</span></li>
-                <li><span class="name">index.html + app.js</span><span class="desc">panel sterowania i konsola</span></li>
+                <li><span class="name">oled_test.py</span><span class="desc">Flask API service + SSD1306 OLED driver</span></li>
+                <li><span class="name">oled-status.json</span><span class="desc">live state</span></li>
+                <li><span class="name">oled-frame.png</span><span class="desc">screen frame snapshot</span></li>
+                <li><span class="name">index.html + app.js</span><span class="desc">control panel and console</span></li>
             </ul>
         </div>
 
-        <footer>Orange Pi Win · SSD1306 0.91″ · zasilanie z pinu 4 (5 V)</footer>
+        <footer>Orange Pi Win · SSD1306 0.91″ · powered from pin 4 (5 V)</footer>
 
         <script src="/oled/app.js"></script>
     </div>

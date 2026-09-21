@@ -29,3 +29,7 @@ oled_raw_i2c.py
 *.local
 NOTES-*.md
 
+
+# private / internal files (not for the public repo)
+README-oled.md
+PUBLISH-PL.md

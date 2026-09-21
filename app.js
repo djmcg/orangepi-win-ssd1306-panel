@@ -28,11 +28,11 @@
     function renderRows(rows) {
         var table = document.getElementById('rows');
         if (!rows || !rows.length) {
-            table.innerHTML = '<tr><td colspan="2">brak danych</td></tr>';
+            table.innerHTML = '<tr><td colspan="2">no data</td></tr>';
             return;
         }
         table.innerHTML = rows.map(function (row, index) {
-            return '<tr><td>wiersz ' + (index + 1) + '</td><td>'
+            return '<tr><td>line ' + (index + 1) + '</td><td>'
                 + String(row).replace(/</g, '&lt;') + '</td></tr>';
         }).join('');
     }
@@ -40,7 +40,7 @@
     function renderHistory(history) {
         var container = document.getElementById('historyList');
         if (!history || !history.length) {
-            container.innerHTML = '<div style="color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 12px;">Brak wpisów w historii</div>';
+            container.innerHTML = '<div style="color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 12px;">No history entries yet</div>';
             return;
         }
         container.innerHTML = history.map(function (item) {
@@ -56,7 +56,7 @@
                     '</div>' +
                     '<div class="history-preview">' + escapeHtml(previewText) + '</div>' +
                 '</div>' +
-                '<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="restoreHistory(\'' + item.id + '\')">Przywróć</button>' +
+                '<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="restoreHistory(\'' + item.id + '\')">Restore</button>' +
             '</div>';
         }).join('');
     }
@@ -74,7 +74,7 @@
         var online = age < STALE_AFTER_MS;
 
         document.getElementById('dot').className = 'dot ' + (online ? 'online' : 'offline');
-        setText('state', online ? 'online · ' + (data.board || '') : 'dane nieaktualne');
+        setText('state', online ? 'online · ' + (data.board || '') : 'stale data');
 
         setText('bus', data.bus === undefined ? null : 'i2c-' + data.bus);
         setText('temp', (data.cpuTemp === null || data.cpuTemp === undefined)
@@ -104,7 +104,7 @@
 
     function fail() {
         document.getElementById('dot').className = 'dot offline';
-        setText('state', 'brak danych — usługa nieaktywna?');
+        setText('state', 'no data — service inactive?');
         renderRows(null);
     }
 
@@ -208,7 +208,7 @@
         var resetBtn = document.getElementById('resetBtn');
         if (resetBtn) {
             resetBtn.addEventListener('click', function () {
-                sendCommand('domyslny', 'auto');
+                sendCommand('default', 'auto');
             });
         }
 
@@ -222,7 +222,7 @@
         var clockBtn = document.getElementById('clockBtn');
         if (clockBtn) {
             clockBtn.addEventListener('click', function () {
-                sendCommand('zegar', 'auto');
+                sendCommand('clock', 'auto');
             });
         }
 
@@ -254,7 +254,7 @@
                 var file = e.target.files[0];
                 if (!file) return;
 
-                uploadStatus.textContent = 'Przetwarzanie...';
+                uploadStatus.textContent = 'Processing...';
                 
                 var formData = new FormData();
                 formData.append('image', file);
@@ -266,17 +266,17 @@
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
                     if (data && data.success) {
-                        uploadStatus.textContent = 'Załadowano obraz';
+                        uploadStatus.textContent = 'Image loaded';
                         loadStatus();
                         loadHistory();
                         setTimeout(refreshFrame, 200);
                     } else {
-                        uploadStatus.textContent = 'Błąd: ' + (data.error || 'nieznany');
+                        uploadStatus.textContent = 'Error: ' + (data.error || 'unknown');
                     }
                 })
                 .catch(function (err) {
                     console.error('Upload failed:', err);
-                    uploadStatus.textContent = 'Błąd przesyłania';
+                    uploadStatus.textContent = 'Upload failed';
                 })
                 .finally(function () {
                     imageInput.value = '';
@@ -288,7 +288,7 @@
 
     document.getElementById('frame').addEventListener('error', function () {
         document.getElementById('dot').className = 'dot offline';
-        setText('state', 'brak zrzutu klatki');
+        setText('state', 'no frame snapshot');
     });
 
     loadStatus();

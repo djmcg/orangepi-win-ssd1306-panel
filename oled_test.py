@@ -575,7 +575,7 @@ def api_command():
             state.mode = "DIAGNOSTICS"
             state.render_mode = None
             state.diagnostic_mode = "fill_max"
-            state.current_rows = ["[Diagnostyka: Pełne wypełnienie 128x32]"]
+            state.current_rows = ["[Diagnostics: full 128x32 fill]"]
             add_to_history(state.current_rows, "DIAGNOSTICS")
             
             # Generate and display fill_max frame immediately
