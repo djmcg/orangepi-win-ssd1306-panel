@@ -1,23 +1,16 @@
-# Pochodzenie kodu i licencje stron trzecich
+# Code Origin and Third-Party Licenses
 
-Ten projekt **nie zawiera sterownika jądra ani modułu `.ko`**. Obsługa panelu
-SSD1306 odbywa się w całości w przestrzeni użytkownika, na stockowych
-komponentach Armbian/Linux:
+This project **does not contain a kernel driver or a `.ko` module**. SSD1306 panel support is handled entirely in user space, using stock Armbian/Linux components:
 
-| Warstwa | Komponent | Pochodzenie |
+| Layer | Component | Origin |
 |---|---|---|
-| Pinmux / kontroler I2C | `sun50i-a64-i2c1.dtbo` (overlay) + sterownik `mv64xxx_i2c` + `i2c-dev` | mainline Linux / Armbian (stock) |
-| Sterownik panelu SSD1306 | `luma.oled` (`luma.core.interface.serial.i2c`, `luma.oled.device.ssd1306`) | [rm-hull/luma.core](https://github.com/rm-hull/luma.core), [rm-hull/luma.oled](https://github.com/rm-hull/luma.oled) — licencja **MIT**, © Richard Hull |
-| Magistrala | `smbus2` | © Karl-Johan Alm — licencja **MIT** |
-| Grafika / fonty | `Pillow` | © Jeffrey A. Clark i kontrybutorzy — licencja **MIT-CMU / HPND** |
-| Backend HTTP | `Flask` | © Pallets — licencja **BSD-3-Clause** |
-| Serwer WSGI | `waitress` | © Zope Foundation i kontrybutorzy — licencja **ZPL-2.1** |
+| Pinmux / I2C controller | `sun50i-a64-i2c1.dtbo` (overlay) + `mv64xxx_i2c` driver + `i2c-dev` | mainline Linux / Armbian (stock) |
+| SSD1306 panel driver | `luma.oled` (`luma.core.interface.serial.i2c`, `luma.oled.device.ssd1306`) | [rm-hull/luma.core](https://github.com/rm-hull/luma.core), [rm-hull/luma.oled](https://github.com/rm-hull/luma.oled) — **MIT** license, © Richard Hull |
+| Bus | `smbus2` | © Karl-Johan Alm — **MIT** license |
+| Graphics / fonts | `Pillow` | © Jeffrey A. Clark and contributors — **MIT-CMU / HPND** license |
+| HTTP backend | `Flask` | © Pallets — **BSD-3-Clause** license |
+| WSGI server | `waitress` | © Zope Foundation and contributors — **ZPL-2.1** license |
 
-Kod w tym repozytorium jedynie **korzysta** z powyższych bibliotek (importy),
-więc może być rozpowszechniany na własnej licencji.
+The code in this repository merely **uses** the libraries above (via imports), so it can be distributed under its own license.
 
-> **DO WERYFIKACJI PRZED PUBLIKACJĄ:** jeśli w `oled_test.py` /
-> `oled_i2c_probe.py` znajdują się fragmenty *przeniesione* (kopiuj-wklej) z
-> `rm-hull/luma.*`, `karabek/OrangePi-OLED` lub `adafruit/Adafruit_Python_SSD1306`,
-> to ich nagłówki licencyjne i atrybucję trzeba zachować w tych plikach oraz
-> dopisać do tabeli powyżej. Użycie biblioteczne (import) tego nie wymaga.
+> **TO VERIFY BEFORE PUBLISHING:** If `oled_test.py` / `oled_i2c_probe.py` contain snippets *copied and pasted* from `rm-hull/luma.*`, `karabek/OrangePi-OLED`, or `adafruit/Adafruit_Python_SSD1306`, their license headers and attributions must be preserved within those files and added to the table above. Standard library usage (imports) does not require this.
