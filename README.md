@@ -1,4 +1,6 @@
 # OLED status panel for Orange Pi Win (SSD1306 128x32 over I2C)
+<img width="928" height="1159" alt="image" src="https://github.com/user-attachments/assets/246bcffd-bcad-4346-9103-b5049bffdc3c" />
+
 
 Live system status plus an interactive web console for a 0.91" SSD1306 OLED wired
 to the 40-pin header of an **Orange Pi Win** (Allwinner A64, `sun50iw1`, Armbian).
